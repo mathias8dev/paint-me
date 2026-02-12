@@ -14,7 +14,9 @@ export function ResizeHandles({ engine }: ResizeHandlesProps) {
   const [dragging, setDragging] = useState<HandleType | null>(null);
   const startMouse = useRef({ x: 0, y: 0 });
   const startSize = useRef({ w: 0, h: 0 });
+  const previewSize = useRef({ w: 0, h: 0 });
   const [positions, setPositions] = useState({ right: { x: 0, y: 0 }, bottom: { x: 0, y: 0 }, corner: { x: 0, y: 0 } });
+  const [previewRect, setPreviewRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   // Recalculate handle positions whenever canvas state changes
   const canvasWidth = useCanvasStore((s) => s.width);
@@ -50,6 +52,7 @@ export function ResizeHandles({ engine }: ResizeHandlesProps) {
       setDragging(type);
       startMouse.current = { x: e.clientX, y: e.clientY };
       startSize.current = { w: engine.config.width, h: engine.config.height };
+      previewSize.current = { w: engine.config.width, h: engine.config.height };
     },
     [engine],
   );
@@ -75,12 +78,26 @@ export function ResizeHandles({ engine }: ResizeHandlesProps) {
       newW = Math.min(4096, Math.max(1, newW));
       newH = Math.min(4096, Math.max(1, newH));
 
-      engine.resize(newW, newH);
-      useCanvasStore.getState().setDimensions(newW, newH);
-      engine.markDirty();
+      previewSize.current = { w: newW, h: newH };
+
+      // Show preview outline on screen
+      const vp = engine.viewport;
+      const origin = vp.canvasToScreen({ x: 0, y: 0 });
+      setPreviewRect({
+        x: origin.x,
+        y: origin.y,
+        w: newW * vp.zoom,
+        h: newH * vp.zoom,
+      });
     };
 
     const onMouseUp = () => {
+      const { w, h } = previewSize.current;
+      // Apply the actual resize only on mouseup
+      engine.resize(w, h);
+      useCanvasStore.getState().setDimensions(w, h);
+      engine.markDirty();
+      setPreviewRect(null);
       setDragging(null);
     };
 
@@ -92,6 +109,22 @@ export function ResizeHandles({ engine }: ResizeHandlesProps) {
       window.removeEventListener('mouseup', onMouseUp);
     };
   }, [dragging, engine]);
+
+  // During drag, compute handle positions from preview size instead of engine config
+  const effectivePositions = previewRect
+    ? (() => {
+        const vp = engine.viewport;
+        const { w, h } = previewSize.current;
+        const rightEdgeMid = vp.canvasToScreen({ x: w, y: h / 2 });
+        const bottomEdgeMid = vp.canvasToScreen({ x: w / 2, y: h });
+        const cornerPoint = vp.canvasToScreen({ x: w, y: h });
+        return {
+          right: { x: rightEdgeMid.x, y: rightEdgeMid.y },
+          bottom: { x: bottomEdgeMid.x, y: bottomEdgeMid.y },
+          corner: { x: cornerPoint.x, y: cornerPoint.y },
+        };
+      })()
+    : positions;
 
   const handleStyle = (pos: { x: number; y: number }, cursor: string): React.CSSProperties => ({
     position: 'absolute',
@@ -107,21 +140,37 @@ export function ResizeHandles({ engine }: ResizeHandlesProps) {
 
   return (
     <>
+      {/* Preview outline during drag */}
+      {previewRect && (
+        <div
+          style={{
+            position: 'absolute',
+            left: previewRect.x,
+            top: previewRect.y,
+            width: previewRect.w,
+            height: previewRect.h,
+            border: '2px dashed #333',
+            pointerEvents: 'none',
+            zIndex: 19,
+          }}
+        />
+      )}
+
       {/* Right edge handle */}
       <div
-        style={handleStyle(positions.right, 'ew-resize')}
+        style={handleStyle(effectivePositions.right, 'ew-resize')}
         onMouseDown={(e) => onMouseDown('right', e)}
       />
 
       {/* Bottom edge handle */}
       <div
-        style={handleStyle(positions.bottom, 'ns-resize')}
+        style={handleStyle(effectivePositions.bottom, 'ns-resize')}
         onMouseDown={(e) => onMouseDown('bottom', e)}
       />
 
       {/* Bottom-right corner handle */}
       <div
-        style={handleStyle(positions.corner, 'nwse-resize')}
+        style={handleStyle(effectivePositions.corner, 'nwse-resize')}
         onMouseDown={(e) => onMouseDown('corner', e)}
       />
     </>

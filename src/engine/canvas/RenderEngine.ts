@@ -107,16 +107,40 @@ export class RenderEngine {
     ctx.translate(offset.x, offset.y);
     ctx.scale(zoom, zoom);
     ctx.imageSmoothingEnabled = zoom < 4;
+
+    // Draw canvas background so transparent areas show white
+    ctx.fillStyle = this._config.backgroundColor;
+    ctx.fillRect(0, 0, this._config.width, this._config.height);
+
     ctx.drawImage(composited, 0, 0);
     ctx.restore();
   }
 
   resize(width: number, height: number): void {
+    const oldW = this._config.width;
+    const oldH = this._config.height;
     this._config.width = width;
     this._config.height = height;
     this.layerManager.resizeAll(width, height);
     this.compositor.resize(width, height);
     this.viewport.setCanvasSize({ width, height });
+
+    // Fill expanded area of the bottom layer with background color
+    if (width > oldW || height > oldH) {
+      const layers = this.layerManager.getAllLayers();
+      if (layers.length > 0) {
+        const bgLayer = layers[0];
+        const ctx = bgLayer.getContext();
+        ctx.fillStyle = this._config.backgroundColor;
+        if (width > oldW) {
+          ctx.fillRect(oldW, 0, width - oldW, height);
+        }
+        if (height > oldH) {
+          ctx.fillRect(0, oldH, oldW, height - oldH);
+        }
+      }
+    }
+
     this.markDirty();
   }
 
