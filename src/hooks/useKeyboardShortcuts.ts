@@ -3,7 +3,7 @@ import type { RenderEngine } from '@/engine/canvas/RenderEngine';
 import type { ToolType } from '@/engine/types';
 import { ToolType as TT } from '@/engine/types';
 import { useToolStore } from '@/store/useToolStore';
-import { DrawCommand } from '@/engine/commands/DrawCommand';
+import { PasteTool } from '@/engine/tools/PasteTool';
 
 const TOOL_SHORTCUTS: Record<string, ToolType> = {
   p: TT.Pencil,
@@ -22,9 +22,29 @@ const TOOL_SHORTCUTS: Record<string, ToolType> = {
 
 export function useKeyboardShortcuts(engine: RenderEngine) {
   useEffect(() => {
+    const getPasteTool = () =>
+      engine.toolRegistry.getTool(TT.Paste) as PasteTool | undefined;
+
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      // Paste tool: Enter to confirm, Escape to cancel
+      const pasteTool = getPasteTool();
+      if (pasteTool?.hasImage()) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          pasteTool.confirm();
+          engine.markDirty();
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          pasteTool.cancel();
+          engine.markDirty();
+          return;
+        }
+      }
 
       // Undo: Ctrl+Z
       if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
@@ -106,15 +126,20 @@ export function useKeyboardShortcuts(engine: RenderEngine) {
           premultiplyAlpha: 'none',
           colorSpaceConversion: 'none',
         }).then((bitmap) => {
-          const layer = engine.layerManager.getActiveLayer();
-          const before = layer.getImageData();
-          layer.getContext().drawImage(bitmap, 0, 0);
-          const after = layer.getImageData();
-          engine.commandHistory.push(
-            new DrawCommand(layer.id, before, after, engine.layerManager, 'Paste'),
-          );
+          const pasteTool = getPasteTool();
+          if (!pasteTool) {
+            bitmap.close();
+            return;
+          }
+
+          const prevTool = useToolStore.getState().activeTool;
+          pasteTool.setImage(bitmap);
+          pasteTool.setOnDone(() => {
+            useToolStore.getState().setActiveTool(prevTool);
+            engine.markDirty();
+          });
+          useToolStore.getState().setActiveTool(TT.Paste);
           engine.markDirty();
-          bitmap.close();
         });
         break;
       }

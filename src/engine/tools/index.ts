@@ -11,4 +11,5 @@ export { EyedropperTool } from './EyedropperTool';
 export { SprayTool } from './SprayTool';
 export { PolygonTool } from './PolygonTool';
 export { ArrowTool } from './ArrowTool';
+export { PasteTool } from './PasteTool';
 export { ToolRegistry } from './ToolRegistry';

@@ -14,6 +14,7 @@ export const ToolType = {
   Spray: 'spray',
   Polygon: 'polygon',
   Arrow: 'arrow',
+  Paste: 'paste',
 } as const;
 
 export type ToolType = (typeof ToolType)[keyof typeof ToolType];

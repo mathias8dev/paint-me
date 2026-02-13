@@ -11,6 +11,7 @@ import { EyedropperTool } from './EyedropperTool';
 import { SprayTool } from './SprayTool';
 import { PolygonTool } from './PolygonTool';
 import { ArrowTool } from './ArrowTool';
+import { PasteTool } from './PasteTool';
 import type { ToolType, ToolConfig } from '../types';
 import type { LayerManager } from '../layers';
 import type { LayerCompositor } from '../layers';
@@ -39,6 +40,7 @@ export class ToolRegistry {
     const spray = new SprayTool(layerManager, commandHistory, viewport);
     const polygon = new PolygonTool(layerManager, commandHistory, viewport);
     const arrow = new ArrowTool(layerManager, commandHistory, viewport);
+    const paste = new PasteTool(layerManager, commandHistory, viewport);
 
     this.register(pencil);
     this.register(eraser);
@@ -52,6 +54,7 @@ export class ToolRegistry {
     this.register(spray);
     this.register(polygon);
     this.register(arrow);
+    this.register(paste);
 
     this.activeTool = pencil;
   }
