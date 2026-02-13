@@ -40,6 +40,7 @@ export function AppLayout() {
         height: container.clientHeight,
       });
     }
+    useCanvasStore.getState().setPanOffset(engine.viewport.offset);
     engine.markDirty();
     setDialog(null);
   };

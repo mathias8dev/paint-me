@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import type { RenderEngine } from '@/engine/canvas/RenderEngine';
 import type { Point } from '@/engine/types';
 import { useToolStore } from '@/store/useToolStore';
+import { useCanvasStore } from '@/store/useCanvasStore';
 import { TextInputDialog } from '@/components/dialogs/TextInputDialog';
 import { ResizeHandles } from './ResizeHandles';
 import { ViewportScrollbars } from './ViewportScrollbars';
@@ -30,6 +31,7 @@ export function CanvasWorkspace({ engine, setCanvasRef }: CanvasWorkspaceProps) 
         width: container.clientWidth,
         height: container.clientHeight,
       });
+      useCanvasStore.getState().setPanOffset(engine.viewport.offset);
       engine.markDirty();
     }
   }, [engine]);
