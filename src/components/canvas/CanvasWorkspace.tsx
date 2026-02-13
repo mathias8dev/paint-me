@@ -4,6 +4,7 @@ import type { Point } from '@/engine/types';
 import { useToolStore } from '@/store/useToolStore';
 import { TextInputDialog } from '@/components/dialogs/TextInputDialog';
 import { ResizeHandles } from './ResizeHandles';
+import { ViewportScrollbars } from './ViewportScrollbars';
 
 interface CanvasWorkspaceProps {
   engine: RenderEngine;
@@ -19,6 +20,7 @@ interface TextInputState {
 export function CanvasWorkspace({ engine, setCanvasRef }: CanvasWorkspaceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [textInput, setTextInput] = useState<TextInputState | null>(null);
+  const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
 
   // Center canvas on mount
   useEffect(() => {
@@ -42,8 +44,10 @@ export function CanvasWorkspace({ engine, setCanvasRef }: CanvasWorkspaceProps) 
         const { width: cw, height: ch } = entry.contentRect;
         const canvas = container.querySelector('canvas');
         if (canvas) {
-          canvas.width = cw;
-          canvas.height = ch;
+          const dpr = window.devicePixelRatio || 1;
+          canvas.width = cw * dpr;
+          canvas.height = ch * dpr;
+          setViewportSize({ w: cw, h: ch });
           engine.markDirty();
         }
       }
@@ -87,11 +91,18 @@ export function CanvasWorkspace({ engine, setCanvasRef }: CanvasWorkspaceProps) 
       <canvas
         ref={setCanvasRef}
         className="absolute inset-0 w-full h-full"
-        style={{ cursor }}
+        style={{ cursor, zIndex: 1 }}
       />
 
       {/* Resize handles */}
       <ResizeHandles engine={engine} />
+
+      {/* Viewport scrollbars */}
+      <ViewportScrollbars
+        engine={engine}
+        viewportWidth={viewportSize.w}
+        viewportHeight={viewportSize.h}
+      />
 
       {/* Text input overlay */}
       {textInput && (

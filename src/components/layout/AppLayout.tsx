@@ -65,7 +65,7 @@ export function AppLayout() {
 
         <CanvasWorkspace engine={engine} setCanvasRef={setCanvasRef} />
 
-        <div className="flex flex-col w-48">
+        <div className="flex flex-col w-54">
           <ColorPanel />
           <BrushSizeSlider />
           <LayerPanel engine={engine} />
