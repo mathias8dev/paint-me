@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { RenderEngine } from '@/engine/canvas/RenderEngine';
 import type { ToolType } from '@/engine/types';
 import { ToolType as TT } from '@/engine/types';
+import { DrawCommand } from '@/engine/commands/DrawCommand';
 import { useToolStore } from '@/store/useToolStore';
 import type { PasteTool } from '@/engine/tools/PasteTool';
 
@@ -18,6 +19,10 @@ const TOOL_SHORTCUTS: Record<string, ToolType> = {
   y: TT.Spray,
   o: TT.Polygon,
   a: TT.Arrow,
+  u: TT.RoundedRectangle,
+  x: TT.Star,
+  w: TT.Triangle,
+  d: TT.Arc,
 };
 
 export function useKeyboardShortcuts(engine: RenderEngine) {
@@ -61,6 +66,20 @@ export function useKeyboardShortcuts(engine: RenderEngine) {
       ) {
         e.preventDefault();
         engine.commandHistory.redo();
+        engine.markDirty();
+        return;
+      }
+
+      // Clear canvas: Delete
+      if (e.key === 'Delete' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        const layer = engine.layerManager.getActiveLayer();
+        const before = layer.getImageData();
+        layer.clear();
+        const after = layer.getImageData();
+        engine.commandHistory.push(
+          new DrawCommand(layer.id, before, after, engine.layerManager, 'Clear Canvas'),
+        );
         engine.markDirty();
         return;
       }

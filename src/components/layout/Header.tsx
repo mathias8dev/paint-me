@@ -2,6 +2,7 @@ import { Undo2, Redo2, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import { useHistoryStore } from '@/store/useHistoryStore';
 import { useCanvasStore } from '@/store/useCanvasStore';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
+import { DrawCommand } from '@/engine/commands/DrawCommand';
 import type { RenderEngine } from '@/engine/canvas/RenderEngine';
 
 interface HeaderProps {
@@ -25,7 +26,13 @@ export function Header({ engine, onNewCanvas, onResizeCanvas }: HeaderProps) {
   };
 
   const handleClear = () => {
-    engine.clear();
+    const layer = engine.layerManager.getActiveLayer();
+    const before = layer.getImageData();
+    layer.clear();
+    const after = layer.getImageData();
+    engine.commandHistory.push(
+      new DrawCommand(layer.id, before, after, engine.layerManager, 'Clear Canvas'),
+    );
     engine.markDirty();
   };
 
@@ -89,7 +96,7 @@ export function Header({ engine, onNewCanvas, onResizeCanvas }: HeaderProps) {
           { label: 'Undo', shortcut: 'Ctrl+Z', onClick: handleUndo, disabled: !canUndo },
           { label: 'Redo', shortcut: 'Ctrl+Y', onClick: handleRedo, disabled: !canRedo },
           { separator: true },
-          { label: 'Clear Canvas', onClick: handleClear },
+          { label: 'Clear Canvas', shortcut: 'Del', onClick: handleClear },
         ]}
       />
 

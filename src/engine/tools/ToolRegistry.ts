@@ -11,6 +11,10 @@ import { EyedropperTool } from './EyedropperTool';
 import { SprayTool } from './SprayTool';
 import { PolygonTool } from './PolygonTool';
 import { ArrowTool } from './ArrowTool';
+import { RoundedRectangleTool } from './RoundedRectangleTool';
+import { StarTool } from './StarTool';
+import { TriangleTool } from './TriangleTool';
+import { ArcTool } from './ArcTool';
 import { PasteTool } from './PasteTool';
 import type { ToolType, ToolConfig } from '../types';
 import type { LayerManager } from '../layers';
@@ -40,6 +44,10 @@ export class ToolRegistry {
     const spray = new SprayTool(layerManager, commandHistory, viewport);
     const polygon = new PolygonTool(layerManager, commandHistory, viewport);
     const arrow = new ArrowTool(layerManager, commandHistory, viewport);
+    const roundedRectangle = new RoundedRectangleTool(layerManager, commandHistory, viewport);
+    const star = new StarTool(layerManager, commandHistory, viewport);
+    const triangle = new TriangleTool(layerManager, commandHistory, viewport);
+    const arc = new ArcTool(layerManager, commandHistory, viewport);
     const paste = new PasteTool(layerManager, commandHistory, viewport);
 
     this.register(pencil);
@@ -54,6 +62,10 @@ export class ToolRegistry {
     this.register(spray);
     this.register(polygon);
     this.register(arrow);
+    this.register(roundedRectangle);
+    this.register(star);
+    this.register(triangle);
+    this.register(arc);
     this.register(paste);
 
     this.activeTool = pencil;

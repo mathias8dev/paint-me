@@ -14,6 +14,10 @@ export const ToolType = {
   Spray: 'spray',
   Polygon: 'polygon',
   Arrow: 'arrow',
+  RoundedRectangle: 'rounded-rectangle',
+  Star: 'star',
+  Triangle: 'triangle',
+  Arc: 'arc',
   Paste: 'paste',
 } as const;
 
@@ -34,6 +38,10 @@ export interface ToolConfig {
   sprayDensity: number;
   polygonSides: number;
   arrowHeadSize: number;
+  cornerRadius: number;
+  starPoints: number;
+  starInnerRatio: number;
+  arcSweepAngle: number;
 }
 
 export interface PointerEventData {
@@ -61,5 +69,9 @@ export function createDefaultToolConfig(): ToolConfig {
     sprayDensity: 30,
     polygonSides: 5,
     arrowHeadSize: 15,
+    cornerRadius: 20,
+    starPoints: 5,
+    starInnerRatio: 0.4,
+    arcSweepAngle: 270,
   };
 }

@@ -1,7 +1,10 @@
 import { ToolType } from '@/engine/types';
 import { useToolStore } from '@/store/useToolStore';
 
-const SHAPE_TOOLS: string[] = [ToolType.Rectangle, ToolType.Circle, ToolType.Polygon, ToolType.Arrow];
+const SHAPE_TOOLS: string[] = [
+  ToolType.Rectangle, ToolType.Circle, ToolType.Polygon, ToolType.Arrow,
+  ToolType.RoundedRectangle, ToolType.Star, ToolType.Triangle, ToolType.Arc,
+];
 
 export function ToolOptions() {
   const activeTool = useToolStore((s) => s.activeTool);
