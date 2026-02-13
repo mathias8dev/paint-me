@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Paint palette -->
+  <ellipse cx="16" cy="17" rx="13" ry="12" fill="#f0e6d3" stroke="#333" stroke-width="1.5"/>
+  <!-- Thumb hole -->
+  <ellipse cx="10" cy="22" rx="3" ry="2.5" fill="#d4c4a8" stroke="#333" stroke-width="1"/>
+  <!-- Paint blobs -->
+  <circle cx="10" cy="10" r="3" fill="#e74c3c"/>
+  <circle cx="17" cy="8" r="2.8" fill="#3498db"/>
+  <circle cx="23" cy="11" r="2.5" fill="#2ecc71"/>
+  <circle cx="24" cy="18" r="2.5" fill="#f1c40f"/>
+  <circle cx="18" cy="22" r="2.2" fill="#9b59b6"/>
+</svg>
