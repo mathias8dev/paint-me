@@ -44,4 +44,12 @@ export abstract class BaseTool {
   getPreviewCanvas(): OffscreenCanvas | null {
     return null;
   }
+
+  hasPlacement(): boolean {
+    return false;
+  }
+
+  confirmPlacement(): void {}
+
+  cancelPlacement(): void {}
 }

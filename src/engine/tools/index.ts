@@ -12,4 +12,5 @@ export { SprayTool } from './SprayTool';
 export { PolygonTool } from './PolygonTool';
 export { ArrowTool } from './ArrowTool';
 export { PasteTool } from './PasteTool';
+export { ShapePlacement, getContentBounds } from './ShapePlacement';
 export { ToolRegistry } from './ToolRegistry';

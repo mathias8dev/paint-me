@@ -5,6 +5,7 @@ import type { PointerEventData, Point } from '../types';
 import type { LayerManager } from '../layers';
 import type { CommandHistory } from '../commands';
 import type { Viewport } from '../viewport';
+import { ShapePlacement, getContentBounds } from './ShapePlacement';
 
 export class LineTool extends BaseTool {
   private isDrawing = false;
@@ -12,6 +13,7 @@ export class LineTool extends BaseTool {
   private snapshotBeforeStroke: ImageData | null = null;
   private previewCanvas: OffscreenCanvas;
   private previewCtx: OffscreenCanvasRenderingContext2D;
+  private placement = new ShapePlacement();
 
   constructor(
     layerManager: LayerManager,
@@ -25,10 +27,17 @@ export class LineTool extends BaseTool {
   }
 
   getCursor(): string {
+    if (this.placement.active) return this.placement.getCursor();
     return 'crosshair';
   }
 
   onPointerDown(event: PointerEventData): void {
+    if (this.placement.active) {
+      const action = this.placement.onPointerDown(event.point);
+      if (action === 'outside') this.confirmPlacement();
+      return;
+    }
+
     const layer = this.layerManager.getActiveLayer();
     if (layer.locked) return;
 
@@ -41,62 +50,115 @@ export class LineTool extends BaseTool {
   }
 
   onPointerMove(event: PointerEventData): void {
+    if (this.placement.active) {
+      this.placement.onPointerMove(event.point, event.shiftKey);
+      return;
+    }
+
     if (!this.isDrawing || !this.startPoint) return;
 
     this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
-    this.previewCtx.save();
-    this.previewCtx.beginPath();
-    this.previewCtx.moveTo(this.startPoint.x, this.startPoint.y);
 
     let endPoint = event.point;
     if (event.shiftKey) {
       endPoint = this.constrainToAngle(this.startPoint, event.point);
     }
 
-    this.previewCtx.lineTo(endPoint.x, endPoint.y);
-    this.previewCtx.strokeStyle = this.config.strokeColor;
-    this.previewCtx.lineWidth = this.config.strokeWidth;
-    this.previewCtx.lineCap = this.config.lineCap;
-    this.previewCtx.globalAlpha = this.config.opacity;
-    this.previewCtx.stroke();
-    this.previewCtx.restore();
+    this.drawLine(this.previewCtx, this.startPoint, endPoint);
   }
 
   onPointerUp(event: PointerEventData): void {
+    if (this.placement.active) {
+      this.placement.onPointerUp();
+      return;
+    }
+
     if (!this.isDrawing || !this.startPoint) return;
     this.isDrawing = false;
 
-    const layer = this.layerManager.getActiveLayer();
-    const ctx = layer.getContext();
+    this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
 
     let endPoint = event.point;
     if (event.shiftKey) {
       endPoint = this.constrainToAngle(this.startPoint, event.point);
     }
 
+    this.drawLine(this.previewCtx, this.startPoint, endPoint);
+
+    this.enterPlacement();
+    this.startPoint = null;
+  }
+
+  getPreviewCanvas(): OffscreenCanvas | null {
+    if (this.placement.active) {
+      const layer = this.layerManager.getActiveLayer();
+      return this.placement.getPreviewCanvas(layer.width, layer.height);
+    }
+    return this.isDrawing ? this.previewCanvas : null;
+  }
+
+  onDeactivate(): void {
+    if (this.placement.active) this.confirmPlacement();
+  }
+
+  hasPlacement(): boolean {
+    return this.placement.active;
+  }
+
+  confirmPlacement(): void {
+    if (!this.placement.active) return;
+
+    const layer = this.layerManager.getActiveLayer();
+    const before = this.snapshotBeforeStroke;
+    this.placement.draw(layer.getContext());
+    const after = layer.getImageData();
+    if (before) {
+      this.commandHistory.push(
+        new DrawCommand(layer.id, before, after, this.layerManager, 'Line'),
+      );
+    }
+    this.placement.cleanup();
+    this.snapshotBeforeStroke = null;
+  }
+
+  cancelPlacement(): void {
+    this.placement.cleanup();
+    this.snapshotBeforeStroke = null;
+  }
+
+  private enterPlacement(): void {
+    const bounds = getContentBounds(this.previewCanvas);
+    if (!bounds) {
+      this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
+      this.snapshotBeforeStroke = null;
+      return;
+    }
+
+    const source = new OffscreenCanvas(bounds.w, bounds.h);
+    source.getContext('2d')!.drawImage(
+      this.previewCanvas,
+      bounds.x, bounds.y, bounds.w, bounds.h,
+      0, 0, bounds.w, bounds.h,
+    );
+    this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
+    this.placement.start(source, bounds.x, bounds.y, bounds.w, bounds.h);
+  }
+
+  private drawLine(
+    ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
+    from: Point,
+    to: Point,
+  ): void {
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(this.startPoint.x, this.startPoint.y);
-    ctx.lineTo(endPoint.x, endPoint.y);
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
     ctx.strokeStyle = this.config.strokeColor;
     ctx.lineWidth = this.config.strokeWidth;
     ctx.lineCap = this.config.lineCap;
     ctx.globalAlpha = this.config.opacity;
     ctx.stroke();
     ctx.restore();
-
-    const snapshotAfter = layer.getImageData();
-    this.commandHistory.push(
-      new DrawCommand(layer.id, this.snapshotBeforeStroke!, snapshotAfter, this.layerManager, 'Line'),
-    );
-
-    this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
-    this.startPoint = null;
-    this.snapshotBeforeStroke = null;
-  }
-
-  getPreviewCanvas(): OffscreenCanvas | null {
-    return this.isDrawing ? this.previewCanvas : null;
   }
 
   private constrainToAngle(start: Point, end: Point): Point {

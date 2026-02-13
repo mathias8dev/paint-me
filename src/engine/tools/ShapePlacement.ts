@@ -1,18 +1,55 @@
-import { BaseTool } from './BaseTool';
-import { DrawCommand } from '../commands/DrawCommand';
-import { ToolType } from '../types';
-import type { PointerEventData, Point } from '../types';
-import type { LayerManager } from '../layers';
-import type { CommandHistory } from '../commands';
-import type { Viewport } from '../viewport';
+import type { Point } from '../types';
 
 type Corner = 'tl' | 'tr' | 'bl' | 'br';
 
 const HANDLE_SIZE = 6;
 const HANDLE_HIT = 8;
 
-export class PasteTool extends BaseTool {
-  private image: ImageBitmap | null = null;
+/**
+ * Scans canvas pixels to find the bounding box of non-transparent content.
+ * Returns null if the canvas is entirely transparent.
+ */
+export function getContentBounds(
+  canvas: OffscreenCanvas,
+  padding = 2,
+): { x: number; y: number; w: number; h: number } | null {
+  const ctx = canvas.getContext('2d')!;
+  const { width, height } = canvas;
+  const data = ctx.getImageData(0, 0, width, height).data;
+
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const alpha = data[(y * width + x) * 4 + 3];
+      if (alpha > 0) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (maxX < 0) return null;
+
+  minX = Math.max(0, minX - padding);
+  minY = Math.max(0, minY - padding);
+  maxX = Math.min(width - 1, maxX + padding);
+  maxY = Math.min(height - 1, maxY + padding);
+
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+/**
+ * Reusable placement handler for floating shape/image positioning.
+ * Provides drag-to-move, corner-resize, dashed border, and handle rendering.
+ */
+export class ShapePlacement {
+  private source: OffscreenCanvas | null = null;
   private pos: Point = { x: 0, y: 0 };
   private size = { w: 0, h: 0 };
 
@@ -25,94 +62,28 @@ export class PasteTool extends BaseTool {
   private previewCanvas: OffscreenCanvas;
   private previewCtx: OffscreenCanvasRenderingContext2D;
 
-  private onDone: ((confirmed: boolean) => void) | null = null;
   private lastPointer: Point = { x: 0, y: 0 };
 
-  constructor(
-    layerManager: LayerManager,
-    commandHistory: CommandHistory,
-    viewport: Viewport,
-  ) {
-    super(ToolType.Paste, 'Paste', '', layerManager, commandHistory, viewport);
+  constructor() {
     this.previewCanvas = new OffscreenCanvas(1, 1);
     this.previewCtx = this.previewCanvas.getContext('2d')!;
   }
 
-  setImage(image: ImageBitmap): void {
-    this.image = image;
-    this.size = { w: image.width, h: image.height };
+  get active(): boolean {
+    return this.source !== null;
+  }
 
-    // Center image on the canvas
-    const layer = this.layerManager.getActiveLayer();
-    this.pos = {
-      x: Math.round(layer.width / 2 - image.width / 2),
-      y: Math.round(layer.height / 2 - image.height / 2),
-    };
-
+  start(source: OffscreenCanvas, x: number, y: number, w: number, h: number): void {
+    this.source = source;
+    this.pos = { x, y };
+    this.size = { w, h };
     this.isDragging = false;
     this.resizeCorner = null;
     this.drawPreview();
   }
 
-  setOnDone(cb: (confirmed: boolean) => void): void {
-    this.onDone = cb;
-  }
-
-  hasImage(): boolean {
-    return this.image !== null;
-  }
-
-  hasPlacement(): boolean {
-    return this.image !== null;
-  }
-
-  confirmPlacement(): void {
-    this.confirm();
-  }
-
-  cancelPlacement(): void {
-    this.cancel();
-  }
-
-  confirm(): void {
-    if (!this.image) return;
-
-    const layer = this.layerManager.getActiveLayer();
-    const before = layer.getImageData();
-    const ctx = layer.getContext();
-    ctx.drawImage(this.image, this.pos.x, this.pos.y, this.size.w, this.size.h);
-    const after = layer.getImageData();
-    this.commandHistory.push(
-      new DrawCommand(layer.id, before, after, this.layerManager, 'Paste'),
-    );
-
-    this.cleanup();
-    this.onDone?.(true);
-  }
-
-  cancel(): void {
-    this.cleanup();
-    this.onDone?.(false);
-  }
-
-  onDeactivate(): void {
-    if (this.image) {
-      this.confirm();
-    }
-  }
-
-  private cleanup(): void {
-    if (this.image) {
-      this.image.close();
-      this.image = null;
-    }
-    this.isDragging = false;
-    this.resizeCorner = null;
-    this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
-  }
-
   getCursor(): string {
-    if (!this.image) return 'default';
+    if (!this.source) return 'default';
 
     const p = this.lastPointer;
     const corner = this.hitCorner(p);
@@ -124,11 +95,31 @@ export class PasteTool extends BaseTool {
     return 'default';
   }
 
-  onPointerDown(event: PointerEventData): void {
-    if (!this.image) return;
-    const p = event.point;
+  /**
+   * Returns the preview canvas with the source drawn at current pos/size
+   * plus dashed border and corner handles.
+   */
+  getPreviewCanvas(canvasW: number, canvasH: number): OffscreenCanvas | null {
+    if (!this.source) return null;
 
-    // Check resize handles first
+    if (this.previewCanvas.width !== canvasW || this.previewCanvas.height !== canvasH) {
+      this.previewCanvas.width = canvasW;
+      this.previewCanvas.height = canvasH;
+      this.drawPreview();
+    }
+
+    return this.previewCanvas;
+  }
+
+  /**
+   * Handle pointer down. Returns the interaction type:
+   * - 'drag': started dragging the shape
+   * - 'resize': started resizing via a corner handle
+   * - 'outside': clicked outside the shape (caller should confirm)
+   */
+  onPointerDown(p: Point): 'drag' | 'resize' | 'outside' {
+    if (!this.source) return 'outside';
+
     const corner = this.hitCorner(p);
     if (corner) {
       this.resizeCorner = corner;
@@ -140,28 +131,24 @@ export class PasteTool extends BaseTool {
         w: this.size.w,
         h: this.size.h,
       };
-      return;
+      return 'resize';
     }
 
-    // Check if inside image → start drag
     if (this.isInside(p)) {
       this.isDragging = true;
       this.dragOffset = {
         x: p.x - this.pos.x,
         y: p.y - this.pos.y,
       };
-      return;
+      return 'drag';
     }
 
-    // Click outside → confirm
-    this.confirm();
+    return 'outside';
   }
 
-  onPointerMove(event: PointerEventData): void {
-    this.lastPointer = event.point;
-
-    if (!this.image) return;
-    const p = event.point;
+  onPointerMove(p: Point, shiftKey: boolean): void {
+    this.lastPointer = p;
+    if (!this.source) return;
 
     if (this.isDragging) {
       this.pos = {
@@ -205,15 +192,13 @@ export class PasteTool extends BaseTool {
           break;
       }
 
-      // Shift: constrain aspect ratio
-      if (event.shiftKey && this.image) {
-        const aspect = this.image.width / this.image.height;
+      if (shiftKey && this.source) {
+        const aspect = this.source.width / this.source.height;
         if (newW / newH > aspect) {
           newW = Math.round(newH * aspect);
         } else {
           newH = Math.round(newW / aspect);
         }
-        // Re-anchor for top-left and bottom-left corners
         if (this.resizeCorner === 'tl') {
           newX = s.x + s.w - newW;
           newY = s.y + s.h - newH;
@@ -227,36 +212,39 @@ export class PasteTool extends BaseTool {
       this.pos = { x: Math.round(newX), y: Math.round(newY) };
       this.size = { w: Math.round(newW), h: Math.round(newH) };
       this.drawPreview();
-      return;
     }
   }
 
-  onPointerUp(_event: PointerEventData): void {
+  onPointerUp(): void {
     this.isDragging = false;
     this.resizeCorner = null;
   }
 
-  getPreviewCanvas(): OffscreenCanvas | null {
-    return this.image ? this.previewCanvas : null;
+  /** Draw the source onto a target context at the current position/size. */
+  draw(ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D): void {
+    if (!this.source) return;
+    ctx.drawImage(this.source, this.pos.x, this.pos.y, this.size.w, this.size.h);
+  }
+
+  cleanup(): void {
+    this.source = null;
+    this.isDragging = false;
+    this.resizeCorner = null;
+    this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
   }
 
   private drawPreview(): void {
-    if (!this.image) return;
+    if (!this.source) return;
 
-    const layer = this.layerManager.getActiveLayer();
-    const cw = layer.width;
-    const ch = layer.height;
-
-    if (this.previewCanvas.width !== cw || this.previewCanvas.height !== ch) {
-      this.previewCanvas.width = cw;
-      this.previewCanvas.height = ch;
-    }
+    const cw = this.previewCanvas.width;
+    const ch = this.previewCanvas.height;
+    if (cw < 1 || ch < 1) return;
 
     const ctx = this.previewCtx;
     ctx.clearRect(0, 0, cw, ch);
 
-    // Draw the pasted image
-    ctx.drawImage(this.image, this.pos.x, this.pos.y, this.size.w, this.size.h);
+    // Draw the shape bitmap
+    ctx.drawImage(this.source, this.pos.x, this.pos.y, this.size.w, this.size.h);
 
     // Dashed selection border
     ctx.save();

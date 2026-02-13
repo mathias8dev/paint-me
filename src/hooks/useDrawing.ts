@@ -110,9 +110,11 @@ export function useDrawing(
         y: Math.round(event.point.y),
       });
 
-      if (activeButton >= 0) {
-        const moveEvent = { ...event, button: activeButton };
-        engine.toolRegistry.getActiveTool().onPointerMove(moveEvent);
+      const tool = engine.toolRegistry.getActiveTool();
+      const moveEvent = { ...event, button: activeButton >= 0 ? activeButton : 0 };
+      tool.onPointerMove(moveEvent);
+
+      if (activeButton >= 0 || tool.hasPlacement()) {
         engine.markDirty();
       }
     };

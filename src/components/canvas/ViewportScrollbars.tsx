@@ -60,7 +60,7 @@ export function ViewportScrollbars({ engine, viewportWidth, viewportHeight }: Vi
   const [visible, setVisible] = useState(false);
   const [hoveredAxis, setHoveredAxis] = useState<'h' | 'v' | null>(null);
   const [draggingAxis, setDraggingAxis] = useState<'h' | 'v' | null>(null);
-  const hideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const flashScrollbars = useCallback(() => {
     setVisible(true);

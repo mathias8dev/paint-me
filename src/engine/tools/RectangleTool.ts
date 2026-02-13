@@ -5,6 +5,7 @@ import type { PointerEventData, Point } from '../types';
 import type { LayerManager } from '../layers';
 import type { CommandHistory } from '../commands';
 import type { Viewport } from '../viewport';
+import { ShapePlacement, getContentBounds } from './ShapePlacement';
 
 export class RectangleTool extends BaseTool {
   private isDrawing = false;
@@ -12,6 +13,7 @@ export class RectangleTool extends BaseTool {
   private snapshotBeforeStroke: ImageData | null = null;
   private previewCanvas: OffscreenCanvas;
   private previewCtx: OffscreenCanvasRenderingContext2D;
+  private placement = new ShapePlacement();
 
   constructor(
     layerManager: LayerManager,
@@ -25,10 +27,17 @@ export class RectangleTool extends BaseTool {
   }
 
   getCursor(): string {
+    if (this.placement.active) return this.placement.getCursor();
     return 'crosshair';
   }
 
   onPointerDown(event: PointerEventData): void {
+    if (this.placement.active) {
+      const action = this.placement.onPointerDown(event.point);
+      if (action === 'outside') this.confirmPlacement();
+      return;
+    }
+
     const layer = this.layerManager.getActiveLayer();
     if (layer.locked) return;
 
@@ -41,6 +50,11 @@ export class RectangleTool extends BaseTool {
   }
 
   onPointerMove(event: PointerEventData): void {
+    if (this.placement.active) {
+      this.placement.onPointerMove(event.point, event.shiftKey);
+      return;
+    }
+
     if (!this.isDrawing || !this.startPoint) return;
 
     this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
@@ -49,26 +63,76 @@ export class RectangleTool extends BaseTool {
   }
 
   onPointerUp(event: PointerEventData): void {
+    if (this.placement.active) {
+      this.placement.onPointerUp();
+      return;
+    }
+
     if (!this.isDrawing || !this.startPoint) return;
     this.isDrawing = false;
 
-    const layer = this.layerManager.getActiveLayer();
-    const ctx = layer.getContext();
-    const rect = this.getRect(this.startPoint, event.point, event.shiftKey);
-    this.drawRect(ctx, rect);
-
-    const snapshotAfter = layer.getImageData();
-    this.commandHistory.push(
-      new DrawCommand(layer.id, this.snapshotBeforeStroke!, snapshotAfter, this.layerManager, 'Rectangle'),
-    );
-
+    // Draw final shape on preview for extraction
     this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
+    const rect = this.getRect(this.startPoint, event.point, event.shiftKey);
+    this.drawRect(this.previewCtx, rect);
+
+    this.enterPlacement();
     this.startPoint = null;
-    this.snapshotBeforeStroke = null;
   }
 
   getPreviewCanvas(): OffscreenCanvas | null {
+    if (this.placement.active) {
+      const layer = this.layerManager.getActiveLayer();
+      return this.placement.getPreviewCanvas(layer.width, layer.height);
+    }
     return this.isDrawing ? this.previewCanvas : null;
+  }
+
+  onDeactivate(): void {
+    if (this.placement.active) this.confirmPlacement();
+  }
+
+  hasPlacement(): boolean {
+    return this.placement.active;
+  }
+
+  confirmPlacement(): void {
+    if (!this.placement.active) return;
+
+    const layer = this.layerManager.getActiveLayer();
+    const before = this.snapshotBeforeStroke;
+    this.placement.draw(layer.getContext());
+    const after = layer.getImageData();
+    if (before) {
+      this.commandHistory.push(
+        new DrawCommand(layer.id, before, after, this.layerManager, 'Rectangle'),
+      );
+    }
+    this.placement.cleanup();
+    this.snapshotBeforeStroke = null;
+  }
+
+  cancelPlacement(): void {
+    this.placement.cleanup();
+    this.snapshotBeforeStroke = null;
+  }
+
+  private enterPlacement(): void {
+    const bounds = getContentBounds(this.previewCanvas);
+    if (!bounds) {
+      this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
+      this.snapshotBeforeStroke = null;
+      return;
+    }
+
+    const source = new OffscreenCanvas(bounds.w, bounds.h);
+    source.getContext('2d')!.drawImage(
+      this.previewCanvas,
+      bounds.x, bounds.y, bounds.w, bounds.h,
+      0, 0, bounds.w, bounds.h,
+    );
+    this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
+    this.placement.start(source, bounds.x, bounds.y, bounds.w, bounds.h);
   }
 
   private drawRect(

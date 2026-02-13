@@ -3,7 +3,7 @@ import type { RenderEngine } from '@/engine/canvas/RenderEngine';
 import type { ToolType } from '@/engine/types';
 import { ToolType as TT } from '@/engine/types';
 import { useToolStore } from '@/store/useToolStore';
-import { PasteTool } from '@/engine/tools/PasteTool';
+import type { PasteTool } from '@/engine/tools/PasteTool';
 
 const TOOL_SHORTCUTS: Record<string, ToolType> = {
   p: TT.Pencil,
@@ -29,18 +29,18 @@ export function useKeyboardShortcuts(engine: RenderEngine) {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
-      // Paste tool: Enter to confirm, Escape to cancel
-      const pasteTool = getPasteTool();
-      if (pasteTool?.hasImage()) {
+      // Placement mode: Enter to confirm, Escape to cancel (shape tools + paste)
+      const activeTool = engine.toolRegistry.getActiveTool();
+      if (activeTool.hasPlacement()) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          pasteTool.confirm();
+          activeTool.confirmPlacement();
           engine.markDirty();
           return;
         }
         if (e.key === 'Escape') {
           e.preventDefault();
-          pasteTool.cancel();
+          activeTool.cancelPlacement();
           engine.markDirty();
           return;
         }
