@@ -3,6 +3,7 @@ import type { RenderEngine } from '@/engine/canvas/RenderEngine';
 import type { ToolType } from '@/engine/types';
 import { ToolType as TT } from '@/engine/types';
 import { useToolStore } from '@/store/useToolStore';
+import { DrawCommand } from '@/engine/commands/DrawCommand';
 
 const TOOL_SHORTCUTS: Record<string, ToolType> = {
   p: TT.Pencil,
@@ -91,7 +92,39 @@ export function useKeyboardShortcuts(engine: RenderEngine) {
       }
     };
 
+    const onPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of items) {
+        if (!item.type.startsWith('image/')) continue;
+        const blob = item.getAsFile();
+        if (!blob) continue;
+
+        e.preventDefault();
+        createImageBitmap(blob, {
+          premultiplyAlpha: 'none',
+          colorSpaceConversion: 'none',
+        }).then((bitmap) => {
+          const layer = engine.layerManager.getActiveLayer();
+          const before = layer.getImageData();
+          layer.getContext().drawImage(bitmap, 0, 0);
+          const after = layer.getImageData();
+          engine.commandHistory.push(
+            new DrawCommand(layer.id, before, after, engine.layerManager, 'Paste'),
+          );
+          engine.markDirty();
+          bitmap.close();
+        });
+        break;
+      }
+    };
+
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('paste', onPaste);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('paste', onPaste);
+    };
   }, [engine]);
 }
