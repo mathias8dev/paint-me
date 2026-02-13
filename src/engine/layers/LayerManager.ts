@@ -137,11 +137,11 @@ export class LayerManager {
     this.emit({ type: 'reorder' });
   }
 
-  resizeAll(width: number, height: number): void {
+  resizeAll(width: number, height: number, shiftX = 0, shiftY = 0): void {
     this.canvasWidth = width;
     this.canvasHeight = height;
     for (const layer of this.layers.values()) {
-      layer.resize(width, height);
+      layer.resize(width, height, shiftX, shiftY);
     }
     this.emit({ type: 'update' });
   }

@@ -90,8 +90,10 @@ export class RenderEngine {
 
     const ctx = this.mainCtx;
     const canvas = this.mainCanvas;
+    const dpr = window.devicePixelRatio || 1;
 
-    // Clear the entire visible canvas
+    // Clear at full resolution
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Get the composited layer output
@@ -99,11 +101,11 @@ export class RenderEngine {
     const layers = this.layerManager.getAllLayers();
     const composited = this.compositor.compositeWithPreview(layers, preview);
 
-    // Draw with viewport transform
+    // Draw with DPR + viewport transform
     const offset = this.viewport.offset;
     const zoom = this.viewport.zoom;
 
-    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.translate(offset.x, offset.y);
     ctx.scale(zoom, zoom);
     ctx.imageSmoothingEnabled = zoom < 4;
@@ -113,32 +115,39 @@ export class RenderEngine {
     ctx.fillRect(0, 0, this._config.width, this._config.height);
 
     ctx.drawImage(composited, 0, 0);
-    ctx.restore();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
-  resize(width: number, height: number): void {
+  resize(width: number, height: number, shiftX = 0, shiftY = 0): void {
     const oldW = this._config.width;
     const oldH = this._config.height;
     this._config.width = width;
     this._config.height = height;
-    this.layerManager.resizeAll(width, height);
+    this.layerManager.resizeAll(width, height, shiftX, shiftY);
     this.compositor.resize(width, height);
     this.viewport.setCanvasSize({ width, height });
 
+    // Adjust viewport so content stays visually in place
+    // Content moved to (shiftX, shiftY) in new canvas, so viewport must
+    // shift by -shift*zoom to keep the same screen position
+    if (shiftX !== 0 || shiftY !== 0) {
+      this.viewport.pan(-shiftX * this.viewport.zoom, -shiftY * this.viewport.zoom);
+    }
+
     // Fill expanded area of the bottom layer with background color
-    if (width > oldW || height > oldH) {
-      const layers = this.layerManager.getAllLayers();
-      if (layers.length > 0) {
-        const bgLayer = layers[0];
-        const ctx = bgLayer.getContext();
-        ctx.fillStyle = this._config.backgroundColor;
-        if (width > oldW) {
-          ctx.fillRect(oldW, 0, width - oldW, height);
-        }
-        if (height > oldH) {
-          ctx.fillRect(0, oldH, oldW, height - oldH);
-        }
-      }
+    const layers = this.layerManager.getAllLayers();
+    if (layers.length > 0) {
+      const bgLayer = layers[0];
+      const ctx = bgLayer.getContext();
+      ctx.fillStyle = this._config.backgroundColor;
+      // Content occupies [shiftX, shiftY] to [shiftX+oldW, shiftY+oldH]
+      // Fill any area outside that region
+      const contentRight = shiftX + oldW;
+      const contentBottom = shiftY + oldH;
+      if (shiftX > 0) ctx.fillRect(0, 0, shiftX, height);
+      if (shiftY > 0) ctx.fillRect(0, 0, width, shiftY);
+      if (contentRight < width) ctx.fillRect(contentRight, 0, width - contentRight, height);
+      if (contentBottom < height) ctx.fillRect(0, contentBottom, width, height - contentBottom);
     }
 
     this.markDirty();

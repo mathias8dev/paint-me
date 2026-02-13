@@ -53,11 +53,11 @@ export class Layer {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  resize(width: number, height: number): void {
+  resize(width: number, height: number, shiftX = 0, shiftY = 0): void {
     const oldCanvas = this.canvas;
     this.canvas = new OffscreenCanvas(width, height);
     this.ctx = this.canvas.getContext('2d')!;
-    this.ctx.drawImage(oldCanvas, 0, 0);
+    this.ctx.drawImage(oldCanvas, shiftX, shiftY);
   }
 
   snapshot(): LayerSnapshot {

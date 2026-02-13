@@ -53,6 +53,10 @@ export class Viewport {
     };
   }
 
+  setOffset(offset: Point): void {
+    this._offset = { ...offset };
+  }
+
   pan(deltaX: number, deltaY: number): void {
     this._offset.x += deltaX;
     this._offset.y += deltaY;
