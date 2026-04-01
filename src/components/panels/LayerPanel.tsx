@@ -60,12 +60,12 @@ export function LayerPanel({ engine }: LayerPanelProps) {
   const reversedLayers = [...layers].reverse();
 
   return (
-    <div className="flex flex-col p-2 bg-gray-50 border-l border-gray-300 border-t">
-      <div className="text-xs font-medium text-gray-600 mb-1">Layers</div>
+    <div className="flex flex-col p-2 bg-gray-50 dark:bg-gray-800 border-l border-gray-300 dark:border-gray-600 border-t dark:border-t-gray-600">
+      <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Layers</div>
 
       {/* Opacity slider for active layer */}
       {activeLayer && (
-        <div className="flex items-center gap-1 mb-2 text-[10px] text-gray-500">
+        <div className="flex items-center gap-1 mb-2 text-[10px] text-gray-500 dark:text-gray-400">
           <span>Opacity:</span>
           <input
             type="range"
@@ -95,23 +95,23 @@ export function LayerPanel({ engine }: LayerPanelProps) {
       </div>
 
       {/* Layer actions */}
-      <div className="flex gap-1 mt-2 pt-1 border-t border-gray-200">
+      <div className="flex gap-1 mt-2 pt-1 border-t border-gray-200 dark:border-gray-600">
         <button
-          className="p-1 rounded hover:bg-gray-200 text-gray-600"
+          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
           onClick={handleAddLayer}
           title="Add layer"
         >
           <Plus size={14} />
         </button>
         <button
-          className="p-1 rounded hover:bg-gray-200 text-gray-600"
+          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
           onClick={handleDuplicate}
           title="Duplicate layer"
         >
           <Copy size={14} />
         </button>
         <button
-          className="p-1 rounded hover:bg-gray-200 text-gray-600 disabled:opacity-30"
+          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 disabled:opacity-30"
           onClick={handleRemoveLayer}
           disabled={layers.length <= 1}
           title="Delete layer"

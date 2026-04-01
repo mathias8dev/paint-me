@@ -33,7 +33,7 @@ export function AppLayout() {
     useCanvasStore.getState().setDimensions(width, height);
 
     // Re-center
-    const container = document.querySelector('.flex-1.overflow-hidden.bg-gray-400');
+    const container = document.querySelector('[data-canvas-workspace]');
     if (container) {
       engine.viewport.centerInContainer({
         width: container.clientWidth,
@@ -53,7 +53,7 @@ export function AppLayout() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-gray-200">
+    <div className="flex flex-col h-screen w-screen bg-gray-200 dark:bg-gray-900">
       <Header
         engine={engine}
         onNewCanvas={() => setDialog('new')}

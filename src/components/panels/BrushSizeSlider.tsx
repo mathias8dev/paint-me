@@ -6,8 +6,8 @@ export function BrushSizeSlider() {
   const setStrokeWidth = useToolStore((s) => s.setStrokeWidth);
 
   return (
-    <div className="p-2 bg-gray-50 border-l border-gray-300">
-      <div className="text-xs font-medium text-gray-600 mb-2">Size: {strokeWidth}px</div>
+    <div className="p-2 bg-gray-50 dark:bg-gray-800 border-l border-gray-300 dark:border-gray-600">
+      <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">Size: {strokeWidth}px</div>
       <input
         type="range"
         min={MIN_STROKE_WIDTH}
@@ -19,7 +19,7 @@ export function BrushSizeSlider() {
       {/* Preview circle */}
       <div className="flex items-center justify-center mt-2">
         <div
-          className="rounded-full bg-black"
+          className="rounded-full bg-black dark:bg-white"
           style={{
             width: Math.min(strokeWidth, 40),
             height: Math.min(strokeWidth, 40),

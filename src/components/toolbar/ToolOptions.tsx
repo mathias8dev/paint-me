@@ -14,9 +14,9 @@ export function ToolOptions() {
   const setOpacity = useToolStore((s) => s.setOpacity);
 
   return (
-    <div className="flex items-center gap-3 px-3 py-1 bg-white border-b border-gray-200 text-xs">
+    <div className="flex items-center gap-3 px-3 py-1 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600 text-xs">
       {/* Opacity */}
-      <label className="flex items-center gap-1 text-gray-600">
+      <label className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
         Opacity:
         <input
           type="range"
@@ -31,7 +31,7 @@ export function ToolOptions() {
 
       {/* Fill toggle for shape tools */}
       {SHAPE_TOOLS.includes(activeTool) && (
-        <label className="flex items-center gap-1 text-gray-600 cursor-pointer">
+        <label className="flex items-center gap-1 text-gray-600 dark:text-gray-300 cursor-pointer">
           <input
             type="checkbox"
             checked={fillEnabled}

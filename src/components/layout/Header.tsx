@@ -1,6 +1,7 @@
-import { Undo2, Redo2, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
+import { Undo2, Redo2, ZoomIn, ZoomOut, Maximize, Sun, Moon } from 'lucide-react';
 import { useHistoryStore } from '@/store/useHistoryStore';
 import { useCanvasStore } from '@/store/useCanvasStore';
+import { useThemeStore } from '@/store/useThemeStore';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { DrawCommand } from '@/engine/commands/DrawCommand';
 import type { RenderEngine } from '@/engine/canvas/RenderEngine';
@@ -14,6 +15,8 @@ interface HeaderProps {
 export function Header({ engine, onNewCanvas, onResizeCanvas }: HeaderProps) {
   const canUndo = useHistoryStore((s) => s.canUndo);
   const canRedo = useHistoryStore((s) => s.canRedo);
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   const handleUndo = () => {
     engine.commandHistory.undo();
@@ -66,7 +69,7 @@ export function Header({ engine, onNewCanvas, onResizeCanvas }: HeaderProps) {
   const handleZoomReset = () => {
     engine.viewport.resetZoom();
     useCanvasStore.getState().setZoom(1);
-    const container = document.querySelector('.flex-1.overflow-hidden.bg-gray-400');
+    const container = document.querySelector('[data-canvas-workspace]');
     if (container) {
       engine.viewport.centerInContainer({
         width: container.clientWidth,
@@ -77,8 +80,8 @@ export function Header({ engine, onNewCanvas, onResizeCanvas }: HeaderProps) {
   };
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 border-b border-gray-300">
-      <span className="font-semibold text-sm text-gray-800 mr-2">Paint Me</span>
+    <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600">
+      <span className="font-semibold text-sm text-gray-800 dark:text-gray-100 mr-2">Paint Me</span>
 
       <DropdownMenu
         label="File"
@@ -109,10 +112,10 @@ export function Header({ engine, onNewCanvas, onResizeCanvas }: HeaderProps) {
         ]}
       />
 
-      <div className="w-px h-5 bg-gray-300 mx-1" />
+      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
 
       <button
-        className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-600"
+        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 dark:text-gray-300"
         onClick={handleUndo}
         disabled={!canUndo}
         title="Undo (Ctrl+Z)"
@@ -120,7 +123,7 @@ export function Header({ engine, onNewCanvas, onResizeCanvas }: HeaderProps) {
         <Undo2 size={15} />
       </button>
       <button
-        className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-600"
+        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 dark:text-gray-300"
         onClick={handleRedo}
         disabled={!canRedo}
         title="Redo (Ctrl+Y)"
@@ -128,28 +131,38 @@ export function Header({ engine, onNewCanvas, onResizeCanvas }: HeaderProps) {
         <Redo2 size={15} />
       </button>
 
-      <div className="w-px h-5 bg-gray-300 mx-1" />
+      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
 
       <button
-        className="p-1 rounded hover:bg-gray-200 text-gray-600"
+        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
         onClick={handleZoomOut}
         title="Zoom out"
       >
         <ZoomOut size={15} />
       </button>
       <button
-        className="p-1 rounded hover:bg-gray-200 text-gray-600"
+        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
         onClick={handleZoomReset}
         title="Reset zoom"
       >
         <Maximize size={15} />
       </button>
       <button
-        className="p-1 rounded hover:bg-gray-200 text-gray-600"
+        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
         onClick={handleZoomIn}
         title="Zoom in"
       >
         <ZoomIn size={15} />
+      </button>
+
+      <div className="flex-1" />
+
+      <button
+        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+        onClick={toggleTheme}
+        title={theme === 'light' ? 'Dark mode' : 'Light mode'}
+      >
+        {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
       </button>
     </div>
   );

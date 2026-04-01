@@ -88,7 +88,8 @@ export function CanvasWorkspace({ engine, setCanvasRef }: CanvasWorkspaceProps) 
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-hidden bg-gray-400 relative"
+      data-canvas-workspace
+      className="flex-1 overflow-hidden bg-gray-400 dark:bg-gray-700 relative"
     >
       <canvas
         ref={setCanvasRef}

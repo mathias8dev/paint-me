@@ -37,21 +37,21 @@ export function DropdownMenu({ label, items }: DropdownMenuProps) {
   return (
     <div ref={ref} className="relative">
       <button
-        className={`px-2 py-0.5 text-xs rounded hover:bg-gray-200 ${open ? 'bg-gray-200' : ''} text-gray-700`}
+        className={`px-2 py-0.5 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-700 ${open ? 'bg-gray-200 dark:bg-gray-700' : ''} text-gray-700 dark:text-gray-200`}
         onClick={() => setOpen(!open)}
       >
         {label}
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-0.5 bg-white border border-gray-200 rounded shadow-lg py-1 min-w-40 z-50">
+        <div className="absolute top-full left-0 mt-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded shadow-lg py-1 min-w-40 z-50">
           {items.map((item, idx) =>
             'separator' in item && item.separator ? (
-              <div key={idx} className="border-t border-gray-100 my-1" />
+              <div key={idx} className="border-t border-gray-100 dark:border-gray-700 my-1" />
             ) : (
               <button
                 key={idx}
-                className="w-full flex items-center justify-between px-3 py-1 text-xs text-gray-700 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-between px-3 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
                 onClick={() => {
                   if (!('separator' in item)) {
                     item.onClick();
@@ -62,7 +62,7 @@ export function DropdownMenu({ label, items }: DropdownMenuProps) {
               >
                 <span>{(item as MenuItem).label}</span>
                 {(item as MenuItem).shortcut && (
-                  <span className="text-gray-400 ml-4">{(item as MenuItem).shortcut}</span>
+                  <span className="text-gray-400 dark:text-gray-500 ml-4">{(item as MenuItem).shortcut}</span>
                 )}
               </button>
             ),

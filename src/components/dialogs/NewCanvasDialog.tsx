@@ -22,44 +22,44 @@ export function NewCanvasDialog({ currentWidth, currentHeight, onConfirm, onCanc
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onCancel}>
       <div
-        className="bg-white rounded-lg shadow-xl p-5 w-80"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-5 w-80"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-sm font-semibold text-gray-800 mb-4">New Canvas</h3>
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-4">New Canvas</h3>
 
         <div className="space-y-3">
           <div className="flex gap-3">
             <label className="flex flex-col gap-1 flex-1">
-              <span className="text-xs text-gray-500">Width (px)</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Width (px)</span>
               <input
                 type="number"
                 min={1}
                 max={4096}
                 value={width}
                 onChange={(e) => setWidth(Number(e.target.value))}
-                className="px-2 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-blue-400"
+                className="px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-sm outline-none focus:border-blue-400 bg-white dark:bg-gray-700 dark:text-gray-100"
               />
             </label>
             <label className="flex flex-col gap-1 flex-1">
-              <span className="text-xs text-gray-500">Height (px)</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Height (px)</span>
               <input
                 type="number"
                 min={1}
                 max={4096}
                 value={height}
                 onChange={(e) => setHeight(Number(e.target.value))}
-                className="px-2 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-blue-400"
+                className="px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-sm outline-none focus:border-blue-400 bg-white dark:bg-gray-700 dark:text-gray-100"
               />
             </label>
           </div>
 
           <div>
-            <span className="text-xs text-gray-500 block mb-1">Presets</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Presets</span>
             <div className="flex flex-wrap gap-1">
               {PRESETS.map((p) => (
                 <button
                   key={p.label}
-                  className="px-2 py-0.5 text-xs bg-gray-100 rounded hover:bg-gray-200 text-gray-600"
+                  className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
                   onClick={() => { setWidth(p.w); setHeight(p.h); }}
                 >
                   {p.label}
@@ -71,7 +71,7 @@ export function NewCanvasDialog({ currentWidth, currentHeight, onConfirm, onCanc
 
         <div className="flex justify-end gap-2 mt-5">
           <button
-            className="px-3 py-1.5 text-xs rounded bg-gray-100 hover:bg-gray-200 text-gray-700"
+            className="px-3 py-1.5 text-xs rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200"
             onClick={onCancel}
           >
             Cancel

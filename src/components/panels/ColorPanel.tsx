@@ -10,15 +10,15 @@ export function ColorPanel() {
   const swapColors = useToolStore((s) => s.swapColors);
 
   return (
-    <div className="p-2 bg-gray-50 border-l border-gray-300">
-      <div className="text-xs font-medium text-gray-600 mb-2">Colors</div>
+    <div className="p-2 bg-gray-50 dark:bg-gray-800 border-l border-gray-300 dark:border-gray-600">
+      <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">Colors</div>
 
       {/* Primary / Secondary display */}
       <div className="relative flex items-center gap-2 mb-3">
         <div className="relative w-12 h-12">
           {/* Secondary (behind) */}
           <div
-            className="absolute bottom-0 right-0 w-8 h-8 rounded border-2 border-white shadow"
+            className="absolute bottom-0 right-0 w-8 h-8 rounded border-2 border-white dark:border-gray-600 shadow"
             style={{ backgroundColor: secondaryColor }}
             onClick={() => {
               const input = document.createElement('input');
@@ -32,7 +32,7 @@ export function ColorPanel() {
           />
           {/* Primary (front) */}
           <div
-            className="absolute top-0 left-0 w-8 h-8 rounded border-2 border-white shadow cursor-pointer z-10"
+            className="absolute top-0 left-0 w-8 h-8 rounded border-2 border-white dark:border-gray-600 shadow cursor-pointer z-10"
             style={{ backgroundColor: primaryColor }}
             onClick={() => {
               const input = document.createElement('input');
@@ -46,7 +46,7 @@ export function ColorPanel() {
           />
         </div>
         <button
-          className="p-1 rounded hover:bg-gray-200 text-gray-500"
+          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
           onClick={swapColors}
           title="Swap colors"
         >
@@ -60,7 +60,7 @@ export function ColorPanel() {
           <button
             key={color}
             className={`w-5 h-5 rounded-sm border cursor-pointer transition-transform hover:scale-110 ${
-              primaryColor === color ? 'border-blue-500 border-2' : 'border-gray-300'
+              primaryColor === color ? 'border-blue-500 border-2' : 'border-gray-300 dark:border-gray-600'
             }`}
             style={{ backgroundColor: color }}
             onClick={() => setPrimaryColor(color)}

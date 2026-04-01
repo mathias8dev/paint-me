@@ -21,12 +21,14 @@ export function LayerItem({
   return (
     <div
       className={`flex items-center gap-1 px-1.5 py-1 rounded cursor-pointer text-xs ${
-        isActive ? 'bg-blue-100 border border-blue-300' : 'hover:bg-gray-100 border border-transparent'
+        isActive
+          ? 'bg-blue-100 dark:bg-blue-900/40 border border-blue-300 dark:border-blue-700'
+          : 'hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
       }`}
       onClick={onSelect}
     >
       <button
-        className="p-0.5 text-gray-500 hover:text-gray-800"
+        className="p-0.5 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
         onClick={(e) => {
           e.stopPropagation();
           onToggleVisibility();
@@ -37,7 +39,7 @@ export function LayerItem({
       </button>
 
       <button
-        className="p-0.5 text-gray-500 hover:text-gray-800"
+        className="p-0.5 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
         onClick={(e) => {
           e.stopPropagation();
           onToggleLock();
@@ -48,7 +50,7 @@ export function LayerItem({
       </button>
 
       <span
-        className={`flex-1 truncate ${!layer.visible ? 'opacity-50' : ''}`}
+        className={`flex-1 truncate dark:text-gray-200 ${!layer.visible ? 'opacity-50' : ''}`}
         onDoubleClick={(e) => {
           e.stopPropagation();
           const name = prompt('Layer name:', layer.name);
@@ -60,7 +62,7 @@ export function LayerItem({
         {layer.name}
       </span>
 
-      <span className="text-gray-400 text-[10px]">
+      <span className="text-gray-400 dark:text-gray-500 text-[10px]">
         {Math.round(layer.opacity * 100)}%
       </span>
     </div>

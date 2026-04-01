@@ -31,7 +31,7 @@ export function Toolbar() {
   const setActiveTool = useToolStore((s) => s.setActiveTool);
 
   return (
-    <div className="flex flex-col gap-1 p-2 bg-gray-50 border-r border-gray-300 w-12">
+    <div className="flex flex-col gap-1 p-2 bg-gray-50 dark:bg-gray-800 border-r border-gray-300 dark:border-gray-600 w-12">
       {TOOLS.map((tool) => (
         <ToolButton
           key={tool.type}
