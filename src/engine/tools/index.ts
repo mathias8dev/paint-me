@@ -1,4 +1,5 @@
 export { BaseTool } from './BaseTool';
+export { BaseShapeTool } from './BaseShapeTool';
 export { PencilTool } from './PencilTool';
 export { EraserTool } from './EraserTool';
 export { LineTool } from './LineTool';
